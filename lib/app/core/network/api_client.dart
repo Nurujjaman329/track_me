@@ -1,59 +1,33 @@
 import 'package:dio/dio.dart';
 import '../storage/token_storage.dart';
-import 'api_exceptions.dart';
+import '../utils/error_handler.dart';
+import '../../core/config/app_config.dart';
 
 class ApiClient {
-  final Dio dio;
-  final TokenStorage tokenStorage;
+  final Dio _dio = Dio(BaseOptions(baseUrl: AppConfig.baseUrl));
 
-  ApiClient(String baseUrl, this.tokenStorage)
-      : dio = Dio(BaseOptions(baseUrl: baseUrl)) {
-    dio.interceptors.add(
+  ApiClient() {
+    _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Attach Authorization header if token exists
-          final access = await tokenStorage.getAccessToken();
-          if (access != null) {
-            options.headers['Authorization'] = 'Bearer $access';
+          final token = await TokenStorage.getAccessToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
-          print('--> ${options.method} ${options.uri}');
-          print('Headers: ${options.headers}');
-          print('Data: ${options.data}');
           return handler.next(options);
         },
-        onResponse: (response, handler) {
-          print('<-- ${response.statusCode} ${response.requestOptions.uri}');
-          print('Response: ${response.data}');
-          return handler.next(response);
-        },
-        onError: (DioError e, handler) {
-          print('<-- Error ${e.response?.statusCode} ${e.requestOptions.uri}');
-          print('Message: ${e.message}');
-          print('Data: ${e.response?.data}');
-          return handler.next(e);
+        onError: (error, handler) {
+          final apiError = ErrorHandler.handle(error);
+          return handler.reject(DioException(
+            requestOptions: error.requestOptions,
+            error: apiError.message,
+            response: error.response,
+            type: DioExceptionType.unknown,
+          ));
         },
       ),
     );
   }
 
-  // Wrap requests to handle ApiException etc.
-  Future<T> request<T>(Future<T> Function() callback) async {
-    try {
-      return await callback();
-    } on DioError catch (e) {
-      if (e.response != null) {
-        final data = e.response?.data;
-        if (data is Map<String, dynamic> && data.containsKey('detail')) {
-          throw ApiException(data['detail']);
-        } else {
-          throw ApiException('Server returned non-JSON response: $data');
-        }
-      } else {
-        throw ApiException(e.message!);
-      }
-    } catch (e) {
-      throw ApiException(e.toString());
-    }
-  }
+  Dio get dio => _dio;
 }
-

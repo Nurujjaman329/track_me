@@ -1,21 +1,24 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 class TokenStorage {
-  final SharedPreferences prefs;
+static const _accessTokenKey = 'ACCESS_TOKEN';
 
-  TokenStorage(this.prefs);
 
-  Future<void> saveTokens(String access, String refresh) async {
-    await prefs.setString('access', access);
-    await prefs.setString('refresh', refresh);
-  }
-
-  Future<String?> getAccessToken() async => prefs.getString('access');
-  Future<String?> getRefreshToken() async => prefs.getString('refresh');
-
-  Future<void> clear() async {
-    await prefs.remove('access');
-    await prefs.remove('refresh');
-  }
+static Future<void> saveAccessToken(String token) async {
+final prefs = await SharedPreferences.getInstance();
+await prefs.setString(_accessTokenKey, token);
 }
 
+
+static Future<String?> getAccessToken() async {
+final prefs = await SharedPreferences.getInstance();
+return prefs.getString(_accessTokenKey);
+}
+
+
+static Future<void> clear() async {
+final prefs = await SharedPreferences.getInstance();
+await prefs.remove(_accessTokenKey);
+}
+}

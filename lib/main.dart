@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app/routes/app_pages.dart';
-import 'app/bindings/initial_binding.dart';
+import 'app/routes/app_routes.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -14,8 +15,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Notes App',
-      initialBinding: InitialBinding(),
-      initialRoute: '/login',
+      debugShowCheckedModeBanner: false,
+      initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
     );
   }
