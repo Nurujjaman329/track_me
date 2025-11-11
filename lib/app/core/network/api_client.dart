@@ -18,12 +18,14 @@ class ApiClient {
         },
         onError: (error, handler) {
           final apiError = ErrorHandler.handle(error);
-          return handler.reject(DioException(
-            requestOptions: error.requestOptions,
-            error: apiError.message,
-            response: error.response,
-            type: DioExceptionType.unknown,
-          ));
+          return handler.reject(
+            DioException(
+              requestOptions: error.requestOptions,
+              error: apiError.message,
+              response: error.response,
+              type: DioExceptionType.unknown,
+            ),
+          );
         },
       ),
     );
