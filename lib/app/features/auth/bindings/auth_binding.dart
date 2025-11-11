@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:getx_practise/app/core/network/api_client.dart';
+import 'package:track_me/app/core/network/api_client.dart';
 import '../controllers/auth_controller.dart';
 import '../services/auth_service.dart';
 

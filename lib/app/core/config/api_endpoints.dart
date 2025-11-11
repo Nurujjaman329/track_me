@@ -1,6 +1,6 @@
 class ApiEndpoints {
-static const register = "/api/accounts/register/";
-static const login = "/api/accounts/login/";
-static const profile = "/api/accounts/profile/";
-static const notes = "/api/notes/";
+static const register = "accounts/register/";
+static const login = "accounts/login/";
+static const profile = "accounts/profile/";
+static const notes = "notes/";
 }

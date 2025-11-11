@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:getx_practise/app/features/splash/views/splash_view.dart';
+import 'package:track_me/app/features/splash/views/splash_view.dart';
 import '../features/auth/views/login_view.dart';
 import '../features/auth/views/register_view.dart';
 import '../features/notes/views/notes_list_view.dart';

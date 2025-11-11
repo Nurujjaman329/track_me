@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
-import 'package:getx_practise/app/core/storage/token_storage.dart';
-import 'package:getx_practise/app/routes/app_routes.dart';
-
+import 'package:track_me/app/core/storage/token_storage.dart';
+import 'package:track_me/app/routes/app_routes.dart';
 
 class SplashController extends GetxController {
   @override

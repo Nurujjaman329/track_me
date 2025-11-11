@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:getx_practise/app/core/config/api_endpoints.dart';
-import 'package:getx_practise/app/core/network/api_client.dart';
-import 'package:getx_practise/app/core/utils/error_handler.dart';
+import 'package:track_me/app/core/config/api_endpoints.dart';
+import 'package:track_me/app/core/network/api_client.dart';
+import 'package:track_me/app/core/utils/error_handler.dart';
 import '../models/login_request_model.dart';
 import '../models/login_response_model.dart';
 import '../models/register_request_model.dart';
