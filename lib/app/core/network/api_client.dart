@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:get/get.dart';
+import 'package:track_me/app/routes/app_routes.dart';
 import '../storage/token_storage.dart';
-import '../utils/error_handler.dart';
 import '../../core/config/app_config.dart';
 
-import 'package:dio/dio.dart';
-import '../storage/token_storage.dart';
 
 class ApiClient {
   final Dio dio = Dio(BaseOptions(baseUrl: AppConfig.baseUrl));
@@ -12,6 +11,7 @@ class ApiClient {
   ApiClient() {
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Add access token to every request
         final token = await TokenStorage.getAccessToken();
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
@@ -20,40 +20,44 @@ class ApiClient {
       },
 
       onError: (DioException error, handler) async {
+        // If 401 → try refresh token
         if (error.response?.statusCode == 401) {
-          // Access token expired → try refresh
           final success = await _refreshToken();
 
           if (success) {
-            // Retry request with new access token
+            // Retry the original request
             final newToken = await TokenStorage.getAccessToken();
             error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-
             final cloneReq = await dio.fetch(error.requestOptions);
             return handler.resolve(cloneReq);
+          } else {
+            // Refresh failed → logout user
+            await TokenStorage.clear();
+            Get.offAllNamed(AppRoutes.login);
           }
         }
 
-        return handler.next(error);
+        handler.next(error);
       },
     ));
   }
+
 
   Future<bool> _refreshToken() async {
     try {
       final refresh = await TokenStorage.getRefreshToken();
       if (refresh == null) return false;
 
-      final response = await dio.post('/api/accounts/refresh/', data: {
+      final response = await dio.post('accounts/token/refresh/', data: {
         'refresh': refresh,
       });
 
       final newAccess = response.data['access'];
+      // Save new access token, keep refresh same
       await TokenStorage.saveTokens(access: newAccess, refresh: refresh);
 
       return true;
     } catch (_) {
-      await TokenStorage.clear();
       return false;
     }
   }
