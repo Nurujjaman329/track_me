@@ -1,14 +1,16 @@
 import 'package:get/get.dart';
+import 'package:track_me/app/core/network/api_exception.dart';
 import 'package:track_me/app/core/storage/token_storage.dart';
+import 'package:track_me/app/routes/app_routes.dart';
 import '../models/login_request_model.dart';
 import '../models/register_request_model.dart';
 import '../services/auth_service.dart';
 import '../models/login_response_model.dart';
 import '../models/register_response_model.dart';
 
+
 class AuthController extends GetxController {
   final AuthService authService;
-
   AuthController({required this.authService});
 
   var isLoading = false.obs;
@@ -16,10 +18,15 @@ class AuthController extends GetxController {
   Future<void> registerUser(RegisterRequestModel body) async {
     try {
       isLoading(true);
-      RegisterResponseModel user = await authService.register(body);
+
+      final RegisterResponseModel user = await authService.register(body);
+
       Get.snackbar('Success', 'Registered as ${user.username}');
+      Get.offAllNamed(AppRoutes.login);
+
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      final message = ApiException.getErrorMessage(e);
+      Get.snackbar('Error', message);
     } finally {
       isLoading(false);
     }
@@ -28,14 +35,24 @@ class AuthController extends GetxController {
   Future<void> loginUser(LoginRequestModel body) async {
     try {
       isLoading(true);
-      LoginResponseModel user = await authService.login(body);
-      await TokenStorage.saveAccessToken(user.access);
-      Get.snackbar('Success', 'Welcome ${user.username}');
-      Get.offAllNamed('/home'); // navigate to home
+
+      final LoginResponseModel user = await authService.login(body);
+
+      // ✅ Save both access + refresh tokens now
+      await TokenStorage.saveTokens(
+        access: user.access,
+        refresh: user.refresh,
+      );
+
+      Get.snackbar('Welcome', user.username);
+      Get.offAllNamed(AppRoutes.home);
+
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      final message = ApiException.getErrorMessage(e);
+      Get.snackbar('Login Failed', message);
     } finally {
       isLoading(false);
     }
   }
 }
+
