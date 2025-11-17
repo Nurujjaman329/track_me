@@ -12,12 +12,17 @@ class NoteFormView extends StatelessWidget {
   final TextEditingController contentController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  final List<String> priorities = ['Urgent', 'Medium', 'Basic'];
+  final RxString selectedPriority = 'Basic'.obs; // default value
+
+
   final List<String> weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   final RxList<String> selectedDays = <String>[].obs;
   TimeOfDay? selectedTime;
 
   NoteFormView({super.key, this.note}) {
     if (note != null) {
+      selectedPriority.value = note!.priority ?? 'Basic';
       titleController.text = note!.title;
       contentController.text = note!.content;
       if (note!.days != null) selectedDays.addAll(note!.days!);
@@ -61,6 +66,8 @@ class NoteFormView extends StatelessWidget {
               _buildHeaderSection(isDark),
               const SizedBox(height: 32),
               _buildFormFields(isDark),
+              const SizedBox(height: 16),
+              _buildPrioritySelector(isDark),
               const SizedBox(height: 16),
 
               // New: Days selection
@@ -274,6 +281,7 @@ class NoteFormView extends StatelessWidget {
               createdAt: note?.createdAt ?? DateTime.now(),
               days: selectedDays.isEmpty ? null : selectedDays.toList(),
               time: selectedTime,
+              priority: selectedPriority.value,
             );
             if (note == null) {
               controller.addNote(n);
@@ -304,6 +312,29 @@ class NoteFormView extends StatelessWidget {
       ),
     );
   }
+
+
+  Widget _buildPrioritySelector(bool isDark) {
+    return Obx(() => Row(
+      children: priorities.map((p) {
+        final isSelected = selectedPriority.value == p;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: ChoiceChip(
+            label: Text(p),
+            selected: isSelected,
+            onSelected: (_) => selectedPriority.value = p,
+            selectedColor: AppColors.primary,
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : (isDark ? AppColors.darkText : AppColors.text),
+            ),
+          ),
+        );
+      }).toList(),
+    ));
+  }
+
 
   void _showDeleteDialog(BuildContext context) {
     showDialog(

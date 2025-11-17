@@ -202,10 +202,35 @@ class _NotesListViewState extends State<NotesListView> {
   }
 
   Widget _buildNoteCard(NoteModel note, bool isDark) {
+    final now = TimeOfDay.now();
+    bool isExpired = false;
+
+    // Check if the note has a time set and if it's expired
+    if (note.time != null) {
+      final noteTime = note.time!;
+      isExpired = (noteTime.hour < now.hour) || (noteTime.hour == now.hour && noteTime.minute < now.minute);
+    }
+
+    // Determine priority color
+    Color priorityColor;
+    switch (note.priority?.toLowerCase()) {
+      case 'urgent':
+        priorityColor = Colors.redAccent;
+        break;
+      case 'medium':
+        priorityColor = Colors.orangeAccent;
+        break;
+      case 'basic':
+      default:
+        priorityColor = Colors.green;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.surface,
+        color: isExpired
+            ? AppColors.error.withOpacity(0.1)
+            : (isDark ? AppColors.darkSurface : AppColors.surface),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -249,6 +274,7 @@ class _NotesListViewState extends State<NotesListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Title
                       Text(
                         note.title.isEmpty ? 'Untitled' : note.title,
                         style: TextStyle(
@@ -260,6 +286,8 @@ class _NotesListViewState extends State<NotesListView> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
+
+                      // Content
                       Text(
                         note.content.isEmpty ? 'No content' : note.content,
                         style: TextStyle(
@@ -268,6 +296,66 @@ class _NotesListViewState extends State<NotesListView> {
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Days, Time, Priority
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (note.days != null)
+                            ...note.days!.map((d) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                d,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )),
+                          if (note.time != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isExpired
+                                    ? AppColors.error.withOpacity(0.2)
+                                    : AppColors.secondary.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "${note.time!.hour.toString().padLeft(2, '0')}:${note.time!.minute.toString().padLeft(2, '0')}",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isExpired ? AppColors.error : AppColors.secondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          // Priority badge
+                          if (note.priority != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: priorityColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                note.priority!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: priorityColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -291,6 +379,8 @@ class _NotesListViewState extends State<NotesListView> {
       ),
     );
   }
+
+
 
   Widget _buildFloatingActionButton(bool isDark) {
     return FloatingActionButton(
