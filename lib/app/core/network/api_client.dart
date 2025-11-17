@@ -49,7 +49,7 @@ class ApiClient {
       final refresh = await TokenStorage.getRefreshToken();
       if (refresh == null) return false;
 
-      final response = await dio.post(ApiEndpoints.refresh_token, data: {
+      final response = await dio.post(ApiEndpoints.refreshToken, data: {
         'refresh': refresh,
       });
 

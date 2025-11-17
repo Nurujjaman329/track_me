@@ -202,13 +202,20 @@ class _NotesListViewState extends State<NotesListView> {
   }
 
   Widget _buildNoteCard(NoteModel note, bool isDark) {
-    final now = TimeOfDay.now();
+    final nowDate = DateTime.now();
     bool isExpired = false;
+    bool isToday = false;
 
-    // Check if the note has a time set and if it's expired
-    if (note.time != null) {
-      final noteTime = note.time!;
-      isExpired = (noteTime.hour < now.hour) || (noteTime.hour == now.hour && noteTime.minute < now.minute);
+    // Check date status
+    if (note.date != null) {
+      final noteDate = DateTime(note.date!.year, note.date!.month, note.date!.day);
+      final today = DateTime(nowDate.year, nowDate.month, nowDate.day);
+
+      if (noteDate.isBefore(today)) {
+        isExpired = true;
+      } else if (noteDate.isAtSameMomentAs(today)) {
+        isToday = true;
+      }
     }
 
     // Determine priority color
@@ -225,12 +232,24 @@ class _NotesListViewState extends State<NotesListView> {
         priorityColor = Colors.green;
     }
 
+    // Compute weekday from date
+    String? weekday;
+    if (note.date != null) {
+      const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      weekday = weekdays[note.date!.weekday - 1];
+    }
+
+    // Determine card color based on date
+    Color cardColor = isExpired
+        ? AppColors.error.withOpacity(0.1)
+        : isToday
+        ? AppColors.primary.withOpacity(0.15)
+        : (isDark ? AppColors.darkSurface : AppColors.surface);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isExpired
-            ? AppColors.error.withOpacity(0.1)
-            : (isDark ? AppColors.darkSurface : AppColors.surface),
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -299,41 +318,39 @@ class _NotesListViewState extends State<NotesListView> {
                       ),
                       const SizedBox(height: 4),
 
-                      // Days, Time, Priority
+                      // Date, Time, Priority
                       Wrap(
                         spacing: 6,
                         runSpacing: 4,
                         children: [
-                          if (note.days != null)
-                            ...note.days!.map((d) => Container(
+                          if (note.date != null)
+                            Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                d,
+                                "${note.date!.year}-${note.date!.month.toString().padLeft(2, '0')}-${note.date!.day.toString().padLeft(2, '0')} ($weekday)",
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            )),
+                            ),
                           if (note.time != null)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isExpired
-                                    ? AppColors.error.withOpacity(0.2)
-                                    : AppColors.secondary.withOpacity(0.15),
+                                color: AppColors.secondary.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 "${note.time!.hour.toString().padLeft(2, '0')}:${note.time!.minute.toString().padLeft(2, '0')}",
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isExpired ? AppColors.error : AppColors.secondary,
+                                  color: AppColors.secondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -379,6 +396,8 @@ class _NotesListViewState extends State<NotesListView> {
       ),
     );
   }
+
+
 
 
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:track_me/app/core/storage/token_storage.dart';
 import 'package:track_me/app/core/utils/app_colors.dart';
 import 'package:track_me/app/routes/app_routes.dart';
 import '../controllers/auth_controller.dart';

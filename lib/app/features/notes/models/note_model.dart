@@ -6,8 +6,8 @@ class NoteModel {
   final String title;
   final String content;
   final DateTime createdAt;
-  final List<String>? days; // e.g., ["Mon", "Wed", "Fri"]
-  final TimeOfDay? time; // Scheduled time
+  final DateTime? date; // new
+  final TimeOfDay? time;
   final String? priority;
 
   NoteModel({
@@ -16,7 +16,7 @@ class NoteModel {
     required this.title,
     required this.content,
     required this.createdAt,
-    this.days,
+    this.date,
     this.time,
     required this.priority,
   });
@@ -27,7 +27,7 @@ class NoteModel {
     title: json['title'],
     content: json['content'],
     createdAt: DateTime.parse(json['created_at']),
-    days: json['days'] != null ? List<String>.from(json['days']) : null,
+    date: json['date'] != null ? DateTime.parse(json['date']) : null,
     time: json['time'] != null
         ? TimeOfDay(
         hour: int.parse(json['time'].split(":")[0]),
@@ -39,8 +39,18 @@ class NoteModel {
   Map<String, dynamic> toJson() => {
     "title": title,
     "content": content,
-    "days": days,
-    "time": time != null ? "${time!.hour.toString().padLeft(2,'0')}:${time!.minute.toString().padLeft(2,'0')}" : null,
+    "date": date != null ? date!.toIso8601String().split('T')[0] : null,
+    "time": time != null
+        ? "${time!.hour.toString().padLeft(2, '0')}:${time!.minute.toString().padLeft(2, '0')}"
+        : null,
     "priority": priority,
   };
+
+  // Helper: get day of week string
+  String get dayOfWeek {
+    if (date == null) return '';
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return weekDays[date!.weekday - 1];
+  }
 }
+

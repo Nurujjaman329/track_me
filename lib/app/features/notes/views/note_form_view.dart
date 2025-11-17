@@ -4,31 +4,45 @@ import 'package:track_me/app/core/utils/app_colors.dart';
 import '../controllers/notes_controller.dart';
 import '../models/note_model.dart';
 
-class NoteFormView extends StatelessWidget {
-  final NotesController controller = Get.find();
+class NoteFormView extends StatefulWidget {
   final NoteModel? note;
 
+  const NoteFormView({super.key, this.note});
+
+
+  @override
+  State<NoteFormView> createState() => _NoteFormViewState();
+}
+
+class _NoteFormViewState extends State<NoteFormView> {
+  final NotesController controller = Get.find();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   final List<String> priorities = ['Urgent', 'Medium', 'Basic'];
-  final RxString selectedPriority = 'Basic'.obs; // default value
-
+  RxString selectedPriority = 'Basic'.obs;
 
   final List<String> weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  final RxList<String> selectedDays = <String>[].obs;
+  RxList<String> selectedDays = <String>[].obs;
   TimeOfDay? selectedTime;
 
-  NoteFormView({super.key, this.note}) {
-    if (note != null) {
-      selectedPriority.value = note!.priority ?? 'Basic';
-      titleController.text = note!.title;
-      contentController.text = note!.content;
-      if (note!.days != null) selectedDays.addAll(note!.days!);
-      selectedTime = note!.time;
+  // 1️⃣ Add this at the top of your state
+  DateTime? selectedDate; // replaces selectedDays
+  final List<String> weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.note != null) {
+      selectedPriority.value = widget.note!.priority ?? 'Basic';
+      titleController.text = widget.note!.title;
+      contentController.text = widget.note!.content;
+      selectedDate = widget.note!.date;
+      selectedTime = widget.note!.time;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +52,7 @@ class NoteFormView extends StatelessWidget {
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
         title: Text(
-          note == null ? 'Create New Note' : 'Edit Note',
+          widget.note == null ? 'Create New Note' : 'Edit Note',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: isDark ? AppColors.darkText : AppColors.text,
@@ -47,7 +61,7 @@ class NoteFormView extends StatelessWidget {
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
         elevation: 0,
         actions: [
-          if (note != null)
+          if (widget.note != null)
             IconButton(
               onPressed: () => _showDeleteDialog(context),
               icon: Icon(
@@ -71,7 +85,7 @@ class NoteFormView extends StatelessWidget {
               const SizedBox(height: 16),
 
               // New: Days selection
-              _buildDaysSelection(isDark),
+              _buildDatePicker(isDark),
               const SizedBox(height: 16),
 
               // New: Time picker
@@ -125,7 +139,7 @@ class NoteFormView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  note == null ? 'Create New Note' : 'Editing Note',
+                  widget.note == null ? 'Create New Note' : 'Editing Note',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -134,7 +148,7 @@ class NoteFormView extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  note == null
+                  widget.note == null
                       ? 'Start writing your thoughts and ideas'
                       : 'Make changes to your existing note',
                   style: TextStyle(
@@ -214,31 +228,36 @@ class NoteFormView extends StatelessWidget {
     );
   }
 
-  // ---------------- Days selection ----------------
-  Widget _buildDaysSelection(bool isDark) {
-    return Obx(() => Wrap(
-      spacing: 8,
-      children: weekdays.map((day) {
-        final isSelected = selectedDays.contains(day);
-        return ChoiceChip(
-          label: Text(day),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
-              selectedDays.add(day);
-            } else {
-              selectedDays.remove(day);
+  Widget _buildDatePicker(bool isDark) {
+    return Row(
+      children: [
+        const Icon(Icons.calendar_today),
+        const SizedBox(width: 16),
+        TextButton(
+          onPressed: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: selectedDate ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) {
+              setState(() {
+                selectedDate = picked;
+              });
             }
           },
-          selectedColor: AppColors.primary,
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : (isDark ? AppColors.darkText : AppColors.text),
+          child: Text(
+            selectedDate != null
+                ? "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')} (${weekDays[selectedDate!.weekday - 1]})"
+                : 'Select Date',
+            style: TextStyle(color: isDark ? AppColors.darkText : AppColors.text),
           ),
-        );
-      }).toList(),
-    ));
+        ),
+      ],
+    );
   }
+
 
   // ---------------- Time picker ----------------
   Widget _buildTimePicker(bool isDark) {
@@ -274,16 +293,16 @@ class NoteFormView extends StatelessWidget {
         onPressed: () {
           if (_formKey.currentState?.validate() ?? false) {
             final n = NoteModel(
-              id: note?.id ?? 0,
-              user: note?.user ?? 0,
+              id: widget.note?.id ?? 0,
+              user: widget.note?.user ?? 0,
               title: titleController.text,
               content: contentController.text,
-              createdAt: note?.createdAt ?? DateTime.now(),
-              days: selectedDays.isEmpty ? null : selectedDays.toList(),
+              createdAt: widget.note?.createdAt ?? DateTime.now(),
+              date: selectedDate,
               time: selectedTime,
               priority: selectedPriority.value,
             );
-            if (note == null) {
+            if (widget.note == null) {
               controller.addNote(n);
             } else {
               controller.updateNote(n);
@@ -301,10 +320,10 @@ class NoteFormView extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(note == null ? Icons.add : Icons.save, size: 20),
+            Icon(widget.note == null ? Icons.add : Icons.save, size: 20),
             const SizedBox(width: 8),
             Text(
-              note == null ? 'Create Note' : 'Update Note',
+              widget.note == null ? 'Create Note' : 'Update Note',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ],
@@ -312,7 +331,6 @@ class NoteFormView extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildPrioritySelector(bool isDark) {
     return Obx(() => Row(
@@ -335,7 +353,6 @@ class NoteFormView extends StatelessWidget {
     ));
   }
 
-
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -349,7 +366,7 @@ class NoteFormView extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Get.back();
-              controller.deleteNote(note!.id);
+              controller.deleteNote(widget.note!.id);
               Get.back();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
