@@ -9,6 +9,7 @@ class NotesService {
 
   NotesService(this.apiClient);
 
+  /// Fetch all notes
   Future<List<NoteModel>> getNotes() async {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.notes);
@@ -20,6 +21,7 @@ class NotesService {
     }
   }
 
+  /// Fetch single note by ID
   Future<NoteModel> getNoteById(int id) async {
     try {
       final response = await apiClient.dio.get('${ApiEndpoints.notes}$id/');
@@ -29,33 +31,46 @@ class NotesService {
     }
   }
 
+  /// Create new note
   Future<NoteModel> createNote(NoteModel note) async {
     try {
-      final response = await apiClient.dio.post(ApiEndpoints.notes, data: note.toJson());
+      final response = await apiClient.dio.post(
+        ApiEndpoints.notes,
+        data: note.toJson(),
+      );
       return NoteModel.fromJson(response.data);
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }
   }
 
+  /// Update note by ID
   Future<NoteModel> updateNote(int id, NoteModel note) async {
     try {
-      final response = await apiClient.dio.put('${ApiEndpoints.notes}$id/', data: note.toJson());
+      final response = await apiClient.dio.put(
+        '${ApiEndpoints.notes}$id/',
+        data: note.toJson(),
+      );
       return NoteModel.fromJson(response.data);
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }
   }
 
+  /// Update note title only
   Future<NoteModel> patchNoteTitle(int id, String title) async {
     try {
-      final response = await apiClient.dio.patch('${ApiEndpoints.notes}$id/', data: {'title': title});
+      final response = await apiClient.dio.patch(
+        '${ApiEndpoints.notes}$id/',
+        data: {'title': title},
+      );
       return NoteModel.fromJson(response.data);
     } on DioException catch (e) {
       throw ErrorHandler.handle(e);
     }
   }
 
+  /// Delete note
   Future<void> deleteNote(int id) async {
     try {
       await apiClient.dio.delete('${ApiEndpoints.notes}$id/');
@@ -64,3 +79,4 @@ class NotesService {
     }
   }
 }
+

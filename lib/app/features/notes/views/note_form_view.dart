@@ -12,10 +12,16 @@ class NoteFormView extends StatelessWidget {
   final TextEditingController contentController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  final List<String> weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final RxList<String> selectedDays = <String>[].obs;
+  TimeOfDay? selectedTime;
+
   NoteFormView({super.key, this.note}) {
     if (note != null) {
       titleController.text = note!.title;
       contentController.text = note!.content;
+      if (note!.days != null) selectedDays.addAll(note!.days!);
+      selectedTime = note!.time;
     }
   }
 
@@ -52,15 +58,19 @@ class NoteFormView extends StatelessWidget {
           key: _formKey,
           child: Column(
             children: [
-              // Header Section
               _buildHeaderSection(isDark),
               const SizedBox(height: 32),
-
-              // Form Fields
               _buildFormFields(isDark),
+              const SizedBox(height: 16),
+
+              // New: Days selection
+              _buildDaysSelection(isDark),
+              const SizedBox(height: 16),
+
+              // New: Time picker
+              _buildTimePicker(isDark),
               const SizedBox(height: 32),
 
-              // Action Button
               _buildActionButton(isDark),
             ],
           ),
@@ -154,53 +164,25 @@ class NoteFormView extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Title Field
             TextFormField(
               controller: titleController,
               decoration: InputDecoration(
                 labelText: 'Note Title',
-                labelStyle: TextStyle(
-                  color: isDark ? AppColors.darkTextLight : AppColors.textLight,
-                ),
-                hintText: 'Enter a title for your note...',
-                hintStyle: TextStyle(
-                  color: isDark ? AppColors.darkTextLight : AppColors.textLight,
-                ),
-                prefixIcon: Icon(
-                  Icons.title,
-                  color: isDark ? AppColors.darkTextLight : AppColors.textLight,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.darkBorder : AppColors.border,
-                  ),
-                ),
+                prefixIcon: Icon(Icons.title, color: isDark ? AppColors.darkTextLight : AppColors.textLight),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: AppColors.primary,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
                 ),
-                filled: true,
-                fillColor: isDark ? AppColors.darkBackground.withOpacity(0.5) : AppColors.background,
               ),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: isDark ? AppColors.darkText : AppColors.text,
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a title for your note';
-                }
-                return null;
-              },
+              validator: (value) => value == null || value.isEmpty ? 'Please enter a title' : null,
             ),
-            const SizedBox(height: 24),
-
-            // Content Field
+            const SizedBox(height: 16),
             Expanded(
               child: TextFormField(
                 controller: contentController,
@@ -209,34 +191,14 @@ class NoteFormView extends StatelessWidget {
                 textAlignVertical: TextAlignVertical.top,
                 decoration: InputDecoration(
                   labelText: 'Note Content',
-                  labelStyle: TextStyle(
-                    color: isDark ? AppColors.darkTextLight : AppColors.textLight,
-                  ),
-                  hintText: 'Write your thoughts here...\n\nYou can write as much as you want!',
-                  hintStyle: TextStyle(
-                    color: isDark ? AppColors.darkTextLight : AppColors.textLight,
-                  ),
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.border,
-                    ),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: AppColors.primary,
-                      width: 2,
-                    ),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
                   ),
-                  filled: true,
-                  fillColor: isDark ? AppColors.darkBackground.withOpacity(0.5) : AppColors.background,
                 ),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? AppColors.darkText : AppColors.text,
-                ),
+                style: TextStyle(fontSize: 14, color: isDark ? AppColors.darkText : AppColors.text),
               ),
             ),
           ],
@@ -245,6 +207,58 @@ class NoteFormView extends StatelessWidget {
     );
   }
 
+  // ---------------- Days selection ----------------
+  Widget _buildDaysSelection(bool isDark) {
+    return Obx(() => Wrap(
+      spacing: 8,
+      children: weekdays.map((day) {
+        final isSelected = selectedDays.contains(day);
+        return ChoiceChip(
+          label: Text(day),
+          selected: isSelected,
+          onSelected: (selected) {
+            if (selected) {
+              selectedDays.add(day);
+            } else {
+              selectedDays.remove(day);
+            }
+          },
+          selectedColor: AppColors.primary,
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+          labelStyle: TextStyle(
+            color: isSelected ? Colors.white : (isDark ? AppColors.darkText : AppColors.text),
+          ),
+        );
+      }).toList(),
+    ));
+  }
+
+  // ---------------- Time picker ----------------
+  Widget _buildTimePicker(bool isDark) {
+    return Row(
+      children: [
+        const Icon(Icons.access_time),
+        const SizedBox(width: 16),
+        TextButton(
+          onPressed: () async {
+            final picked = await showTimePicker(
+              context: Get.context!,
+              initialTime: selectedTime ?? TimeOfDay.now(),
+            );
+            if (picked != null) selectedTime = picked;
+          },
+          child: Text(
+            selectedTime != null
+                ? "${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}"
+                : 'Select Time (Optional)',
+            style: TextStyle(color: isDark ? AppColors.darkText : AppColors.text),
+          ),
+        )
+      ],
+    );
+  }
+
+  // ---------------- Action Button ----------------
   Widget _buildActionButton(bool isDark) {
     return SizedBox(
       width: double.infinity,
@@ -258,6 +272,8 @@ class NoteFormView extends StatelessWidget {
               title: titleController.text,
               content: contentController.text,
               createdAt: note?.createdAt ?? DateTime.now(),
+              days: selectedDays.isEmpty ? null : selectedDays.toList(),
+              time: selectedTime,
             );
             if (note == null) {
               controller.addNote(n);
@@ -271,25 +287,17 @@ class NoteFormView extends StatelessWidget {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           shadowColor: AppColors.primary.withOpacity(0.3),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              note == null ? Icons.add : Icons.save,
-              size: 20,
-            ),
+            Icon(note == null ? Icons.add : Icons.save, size: 20),
             const SizedBox(width: 8),
             Text(
               note == null ? 'Create Note' : 'Update Note',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -301,40 +309,19 @@ class NoteFormView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Note',
-          style: TextStyle(
-            color: AppColors.text,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this note? This action cannot be undone.',
-          style: TextStyle(
-            color: AppColors.textLight,
-          ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        title: Text('Delete Note', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete this note? This action cannot be undone.',
+            style: TextStyle(color: AppColors.textLight)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textLight),
-            ),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('Cancel', style: TextStyle(color: AppColors.textLight))),
           ElevatedButton(
             onPressed: () {
               Get.back();
               controller.deleteNote(note!.id);
               Get.back();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
             child: const Text('Delete'),
           ),
         ],

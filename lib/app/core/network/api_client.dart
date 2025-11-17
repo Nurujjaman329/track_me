@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
+import 'package:track_me/app/core/config/api_endpoints.dart';
 import 'package:track_me/app/routes/app_routes.dart';
 import '../storage/token_storage.dart';
 import '../../core/config/app_config.dart';
@@ -48,7 +49,7 @@ class ApiClient {
       final refresh = await TokenStorage.getRefreshToken();
       if (refresh == null) return false;
 
-      final response = await dio.post('accounts/token/refresh/', data: {
+      final response = await dio.post(ApiEndpoints.refresh_token, data: {
         'refresh': refresh,
       });
 
